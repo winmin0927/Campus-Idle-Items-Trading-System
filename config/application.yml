@@ -1,0 +1,16 @@
+# 数据库配置
+database:
+  host: localhost
+  port: 3306
+  name: campus_trade
+  user: root
+  password: your_password
+
+# 服务器配置
+server:
+  port: 8080
+  baseUrl: http://localhost:8080
+
+# 文件配置
+file:
+  userFilePath: ./uploads
