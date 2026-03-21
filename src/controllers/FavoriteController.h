@@ -2,7 +2,7 @@
 
 #include <drogon/drogon.h>
 #include <chrono>
-#include "services/FavoriteService.h"
+#include "service/FavoriteService.h"
 #include "vo/R.h"
 #include "enums/ErrorMsg.h"
 
@@ -24,14 +24,11 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
-        auto json = req->getJsonObject();
-        models::Favorite favorite;
-        favorite.userId = std::stol(shUserId);
-        favorite.idleId = (*json)["idleId"].as<long>();
+        models::Favorite favorite = models::Favorite::VtoModel(*req->getJsonObject());
         
         // 设置当前时间
         auto now = std::chrono::system_clock::now();
@@ -43,40 +40,40 @@ public:
         services::FavoriteService favoriteService;
         if (favoriteService.addFavorite(favorite)) {
             auto resp = vo::R<long>::success(favorite.id);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
     void deleteFavorite(const HttpRequestPtr &req,
-                        std::function<void(const HttpResponsePtr &)> &&callback,
-                        long id) {
+                        std::function<void(const HttpResponsePtr &)> &&callback) {
+        long id = std::stol(req->getParameter("id"));
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
         services::FavoriteService favoriteService;
         if (favoriteService.deleteFavorite(id)) {
             auto resp = vo::R<>::success();
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
     void checkFavorite(const HttpRequestPtr &req,
-                       std::function<void(const HttpResponsePtr &)> &&callback,
-                       long idleId) {
+                       std::function<void(const HttpResponsePtr &)> &&callback) {
+        long idleId = std::stol(req->getParameter("idleId"));
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
@@ -85,7 +82,7 @@ public:
         int result = favoriteService.isFavorite(userId, idleId);
         
         auto resp = vo::R<int>::success(result);
-        callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+        callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
     }
     
     void getMyFavorite(const HttpRequestPtr &req,
@@ -93,7 +90,7 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
@@ -102,7 +99,7 @@ public:
         auto favorites = favoriteService.getAllFavorite(userId);
         
         auto resp = vo::R<std::vector<vo::FavoriteVo>>::success(favorites);
-        callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+        callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
     }
 };
 

@@ -4,7 +4,7 @@
 #include <nlohmann/json.hpp>
 #include "vo/R.h"
 #include "enums/ErrorMsg.h"
-#include "exception/ParamException.h"
+#include "../exception/ParamException.h"
 
 using namespace drogon;
 

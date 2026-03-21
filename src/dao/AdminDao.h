@@ -21,7 +21,7 @@ public:
     
     long insert(const models::Admin& record) {
         auto result = dbClient->execSqlSync(
-            "INSERT INTO admin (account_number, admin_password, admin_name) VALUES (?, ?, ?)",
+            "INSERT INTO admin (accountNumber, adminPassword, adminName) VALUES (?, ?, ?)",
             record.accountNumber, record.adminPassword, record.adminName
         );
         return result.insertId();
@@ -35,7 +35,7 @@ public:
     
     bool updateByPrimaryKey(const models::Admin& record) {
         auto result = dbClient->execSqlSync(
-            "UPDATE admin SET account_number = ?, admin_password = ?, admin_name = ? WHERE id = ?",
+            "UPDATE admin SET accountNumber = ?, adminPassword = ?, adminName = ? WHERE id = ?",
             record.accountNumber, record.adminPassword, record.adminName, record.id
         );
         return result.affectedRows() > 0;
@@ -43,7 +43,7 @@ public:
     
     std::optional<models::Admin> login(const std::string& accountNumber, const std::string& adminPassword) {
         auto result = dbClient->execSqlSync(
-            "SELECT * FROM admin WHERE account_number = ? AND admin_password = ?",
+            "SELECT * FROM admin WHERE accountNumber = ? AND adminPassword = ?",
             accountNumber, adminPassword
         );
         if (result.empty()) return std::nullopt;
@@ -70,9 +70,9 @@ private:
     models::Admin mapRowToAdmin(const Row& row) {
         models::Admin admin;
         admin.id = row["id"].as<long>();
-        admin.accountNumber = row["account_number"].as<std::string>();
-        admin.adminPassword = row["admin_password"].as<std::string>();
-        admin.adminName = row["admin_name"].as<std::string>();
+        admin.accountNumber = row["accountNumber"].as<std::string>();
+        admin.adminPassword = row["adminPassword"].as<std::string>();
+        admin.adminName = row["adminName"].as<std::string>();
         return admin;
     }
 };

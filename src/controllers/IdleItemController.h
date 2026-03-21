@@ -2,7 +2,7 @@
 
 #include <drogon/drogon.h>
 #include <chrono>
-#include "services/IdleItemService.h"
+#include "service/IdleItemService.h"
 #include "vo/R.h"
 #include "enums/ErrorMsg.h"
 
@@ -26,12 +26,11 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
-        auto json = req->getJsonObject();
-        models::IdleItem idleItem = *json;
+        models::IdleItem idleItem = models::IdleItem::VtoModel(*req->getJsonObject());
         idleItem.userId = std::stol(shUserId);
         idleItem.idleStatus = 1;
         
@@ -45,25 +44,25 @@ public:
         services::IdleItemService idleService;
         if (idleService.addIdleItem(idleItem)) {
             auto resp = vo::R<models::IdleItem>::success(idleItem);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
     void getIdleItem(const HttpRequestPtr &req,
-                     std::function<void(const HttpResponsePtr &)> &&callback,
-                     long id) {
+                     std::function<void(const HttpResponsePtr &)> &&callback) {
+        long id = std::stol(req->getParameter("id"));
         services::IdleItemService idleService;
         auto idleItem = idleService.getIdleItem(id);
         
         if (idleItem.has_value()) {
             auto resp = vo::R<vo::IdleItemVo>::success(*idleItem);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::PARAM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
@@ -72,7 +71,7 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
@@ -81,7 +80,7 @@ public:
         auto items = idleService.getAllIdleItem(userId);
         
         auto resp = vo::R<std::vector<models::IdleItem>>::success(items);
-        callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+        callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
     }
     
     void findIdleItem(const HttpRequestPtr &req,
@@ -97,7 +96,7 @@ public:
         auto pageVo = idleService.findIdleItem(findValue, page, nums);
         
         auto resp = vo::R<vo::PageVo<vo::IdleItemVo>>::success(pageVo);
-        callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+        callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
     }
     
     void findIdleItemByLabel(const HttpRequestPtr &req,
@@ -105,7 +104,7 @@ public:
         auto idleLabelOpt = req->getOptionalParameter<int>("idleLabel");
         if (!idleLabelOpt.has_value()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::PARAM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
@@ -120,7 +119,7 @@ public:
         auto pageVo = idleService.findIdleItemByLabel(idleLabel, page, nums);
         
         auto resp = vo::R<vo::PageVo<vo::IdleItemVo>>::success(pageVo);
-        callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+        callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
     }
     
     void updateIdleItem(const HttpRequestPtr &req,
@@ -128,21 +127,20 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
-        
-        auto json = req->getJsonObject();
-        models::IdleItem idleItem = *json;
+
+        models::IdleItem idleItem = models::IdleItem::VtoModel(*req->getJsonObject());
         idleItem.userId = std::stol(shUserId);
         
         services::IdleItemService idleService;
         if (idleService.updateIdleItem(idleItem)) {
             auto resp = vo::R<>::success();
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
 };

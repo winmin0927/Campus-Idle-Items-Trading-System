@@ -21,8 +21,8 @@ public:
     
     long insert(const models::Message& record) {
         auto result = dbClient->execSqlSync(
-            "INSERT INTO message (user_id, idle_id, message_content, message_time) VALUES (?, ?, ?, ?)",
-            record.userId, record.idleId, record.messageContent, record.messageTime
+            "INSERT INTO message (userId, idleId, content, createTime, toUser, toMessage) VALUES (?, ?, ?, ?, ?, ?)",
+            record.userId, record.idleId, record.content, record.createTime, record.toUser, record.toMessage
         );
         return result.insertId();
     }
@@ -34,19 +34,19 @@ public:
     }
     
     std::vector<models::Message> getMyMessage(long userId) {
-        auto result = dbClient->execSqlSync("SELECT * FROM message WHERE user_id = ?", userId);
+        auto result = dbClient->execSqlSync("SELECT * FROM message WHERE userId = ?", userId);
         return mapResultToList(result);
     }
     
     std::vector<models::Message> getIdleMessage(long idleId) {
-        auto result = dbClient->execSqlSync("SELECT * FROM message WHERE idle_id = ?", idleId);
+        auto result = dbClient->execSqlSync("SELECT * FROM message WHERE idleId = ?", idleId);
         return mapResultToList(result);
     }
     
     bool updateByPrimaryKey(const models::Message& record) {
         auto result = dbClient->execSqlSync(
-            "UPDATE message SET user_id = ?, idle_id = ?, message_content = ?, message_time = ? WHERE id = ?",
-            record.userId, record.idleId, record.messageContent, record.messageTime, record.id
+            "UPDATE message SET userId = ?, idleId = ?, content = ?, createTime = ? WHERE id = ?",
+            record.userId, record.idleId, record.content, record.createTime, record.id
         );
         return result.affectedRows() > 0;
     }
@@ -57,10 +57,12 @@ private:
     models::Message mapRowToMessage(const Row& row) {
         models::Message message;
         message.id = row["id"].as<long>();
-        message.userId = row["user_id"].as<long>();
-        message.idleId = row["idle_id"].as<long>();
-        message.messageContent = row["message_content"].as<std::string>();
-        message.messageTime = row["message_time"].as<std::string>();
+        message.userId = row["userId"].as<long>();
+        message.idleId = row["idleId"].as<long>();
+        message.content = row["content"].as<std::string>();
+        message.createTime = row["createTime"].as<std::string>();
+        message.toUser = row["toUser"].as<long>();
+        message.toMessage = row["toMessage"].as<long>();
         return message;
     }
     

@@ -26,7 +26,8 @@ file(GLOB_RECURSE SOURCES
 add_executable(${PROJECT_NAME} src/main.cpp ${SOURCES})
 
 # 链接库
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Drogon::Drogon
     spdlog::spdlog
     yaml-cpp
 )

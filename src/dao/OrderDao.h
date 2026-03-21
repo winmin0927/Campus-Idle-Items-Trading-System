@@ -1,9 +1,9 @@
 #pragma once
 
 #include <drogon/drogon.h>
-#include <vector>
-#include <optional>
 #include "models/Order.h"
+#include <optional>
+#include <vector>
 
 using namespace drogon;
 using namespace drogon::orm;
@@ -11,90 +11,142 @@ using namespace drogon::orm;
 namespace dao {
 
 class OrderDao {
+private:
+    DbClientPtr dbClient;
+
 public:
     OrderDao() : dbClient(app().getDbClient()) {}
-    
-    bool deleteByPrimaryKey(long id) {
-        auto result = dbClient->execSqlSync("DELETE FROM `order` WHERE id = ?", id);
-        return result.affectedRows() > 0;
-    }
-    
+
     long insert(const models::Order& record) {
-        auto result = dbClient->execSqlSync(
-            "INSERT INTO `order` (order_id, idle_id, user_id, address_id, order_time, order_status) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            record.orderId, record.idleId, record.userId, record.addressId,
-            record.orderTime, record.orderStatus
-        );
-        return result.insertId();
+        if (record.paymentTime.empty()) {
+            auto result = dbClient->execSqlSync(
+                "INSERT INTO `order` (orderNumber, idleId, userId, addressId, "
+                "createTime, orderStatus, paymentStatus) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                record.orderNumber, record.idleId, record.userId, record.addressId,
+                record.createTime, record.orderStatus, record.paymentStatus
+            );
+            return result.insertId();
+        } else {
+            auto result = dbClient->execSqlSync(
+                "INSERT INTO `order` (orderNumber, idleId, userId, addressId, "
+                "createTime, orderStatus, paymentStatus, paymentTime) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                record.orderNumber, record.idleId, record.userId, record.addressId,
+                record.createTime, record.orderStatus, record.paymentStatus, record.paymentTime
+            );
+            return result.insertId();
+        }
     }
-    
+
     std::optional<models::Order> selectByPrimaryKey(long id) {
-        auto result = dbClient->execSqlSync("SELECT * FROM `order` WHERE id = ?", id);
-        if (result.empty()) return std::nullopt;
+        auto result = dbClient->execSqlSync(
+            "SELECT * FROM `order` WHERE id = ?", id
+        );
+        if (result.empty()) {
+            return std::nullopt;
+        }
         return mapRowToOrder(result[0]);
     }
-    
-    std::vector<models::Order> getMyOrder(long userId) {
-        auto result = dbClient->execSqlSync("SELECT * FROM `order` WHERE user_id = ?", userId);
-        return mapResultToList(result);
+
+    std::vector<models::Order> selectByUserId(long userId) {
+        auto result = dbClient->execSqlSync(
+            "SELECT * FROM `order` WHERE userId = ? ORDER BY createTime DESC",
+            userId
+        );
+        std::vector<models::Order> orders;
+        for (const auto& row : result) {
+            orders.push_back(mapRowToOrder(row));
+        }
+        return orders;
     }
-    
-    std::vector<models::Order> getAllOrder(int begin, int nums) {
-        auto result = dbClient->execSqlSync("SELECT * FROM `order` LIMIT?, ?", begin, nums);
-        return mapResultToList(result);
+
+    std::vector<models::Order> selectByIdleId(long idleId) {
+        auto result = dbClient->execSqlSync(
+            "SELECT * FROM `order` WHERE idleId = ? ORDER BY createTime DESC",
+            idleId
+        );
+        std::vector<models::Order> orders;
+        for (const auto& row : result) {
+            orders.push_back(mapRowToOrder(row));
+        }
+        return orders;
     }
-    
-    int countAllOrder() {
+
+    std::optional<models::Order> selectByOrderNumber(const std::string& orderNumber) {
+        auto result = dbClient->execSqlSync(
+            "SELECT * FROM `order` WHERE orderNumber = ?", orderNumber
+        );
+        if (result.empty()) {
+            return std::nullopt;
+        }
+        return mapRowToOrder(result[0]);
+    }
+
+    std::vector<models::Order> selectAll(int offset, int limit) {
+        auto result = dbClient->execSqlSync(
+            "SELECT * FROM `order` ORDER BY createTime DESC LIMIT ?, ?",
+            offset, limit
+        );
+        std::vector<models::Order> orders;
+        for (const auto& row : result) {
+            orders.push_back(mapRowToOrder(row));
+        }
+        return orders;
+    }
+
+    int countAll() {
         auto result = dbClient->execSqlSync("SELECT COUNT(*) as count FROM `order`");
         return result[0]["count"].as<int>();
     }
-    
-    std::vector<models::Order> findOrderByIdleIdList(const std::vector<long>& idleIdList) {
-        if (idleIdList.empty()) return {};
-        
-        std::string placeholders;
-        for (size_t i = 0; i < idleIdList.size(); i++) {
-            if (i > 0) placeholders += ",";
-            placeholders += "?";
-        }
-        
-        std::string sql = "SELECT * FROM `order` WHERE idle_id IN (" + placeholders + ")";
-        auto result = dbClient->execSqlSync(sql, idleIdList);
-        return mapResultToList(result);
-    }
-    
+
     bool updateByPrimaryKey(const models::Order& record) {
+        if (record.paymentTime.empty()) {
+            auto result = dbClient->execSqlSync(
+                "UPDATE `order` SET orderNumber = ?, idleId = ?, userId = ?, "
+                "addressId = ?, createTime = ?, orderStatus = ?, "
+                "paymentStatus = ? WHERE id = ?",
+                record.orderNumber, record.idleId, record.userId, record.addressId,
+                record.createTime, record.orderStatus, record.paymentStatus, record.id
+            );
+            return result.affectedRows() > 0;
+        } else {
+            auto result = dbClient->execSqlSync(
+                "UPDATE `order` SET orderNumber = ?, idleId = ?, userId = ?, "
+                "addressId = ?, createTime = ?, orderStatus = ?, "
+                "paymentStatus = ?, paymentTime = ? WHERE id = ?",
+                record.orderNumber, record.idleId, record.userId, record.addressId,
+                record.createTime, record.orderStatus, record.paymentStatus,
+                record.paymentTime, record.id
+            );
+            return result.affectedRows() > 0;
+        }
+    }
+
+    bool deleteByPrimaryKey(long id) {
         auto result = dbClient->execSqlSync(
-            "UPDATE `order` SET order_id = ?, idle_id = ?, user_id = ?, "
-            "address_id = ?, order_time = ?, order_status = ? WHERE id = ?",
-            record.orderId, record.idleId, record.userId, record.addressId,
-            record.orderTime, record.orderStatus, record.id
+            "DELETE FROM `order` WHERE id = ?", id
         );
         return result.affectedRows() > 0;
     }
-    
+
 private:
-    DbClientPtr dbClient;
-    
     models::Order mapRowToOrder(const Row& row) {
         models::Order order;
         order.id = row["id"].as<long>();
-        order.orderId = row["order_id"].as<std::string>();
-        order.idleId = row["idle_id"].as<long>();
-        order.userId = row["user_id"].as<long>();
-        order.addressId = row["address_id"].as<long>();
-        order.orderTime = row["order_time"].as<std::string>();
-        order.orderStatus = row["order_status"].as<int>();
-        return order;
-    }
-    
-    std::vector<models::Order> mapResultToList(const Result& result) {
-        std::vector<models::Order> list;
-        for (auto row : result) {
-            list.push_back(mapRowToOrder(row));
+        order.orderNumber = row["orderNumber"].as<std::string>();
+        order.idleId = row["idleId"].as<long>();
+        order.userId = row["userId"].as<long>();
+        order.addressId = row["addressId"].as<long>();
+        order.createTime = row["createTime"].as<std::string>();
+        order.orderStatus = row["orderStatus"].as<int>();
+        order.paymentStatus = row["paymentStatus"].as<int>();
+        
+        if (!row["paymentTime"].isNull()) {
+            order.paymentTime = row["paymentTime"].as<std::string>();
         }
-        return list;
+        
+        return order;
     }
 };
 

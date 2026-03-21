@@ -1,7 +1,7 @@
 #pragma once
 
 #include <drogon/drogon.h>
-#include "services/OrderAddressService.h"
+#include "service/OrderAddressService.h"
 #include "vo/R.h"
 #include "enums/ErrorMsg.h"
 
@@ -22,18 +22,17 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
-        
-        auto json = req->getJsonObject();
-        models::OrderAddress orderAddress = *json;
+
+        models::OrderAddress orderAddress = models::OrderAddress::VtoModel(*req->getJsonObject());
         
         services::OrderAddressService orderAddressService;
         bool success = orderAddressService.addOrderAddress(orderAddress);
         
         auto resp = vo::R<bool>::success(success);
-        callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+        callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
     }
     
     void updateOrderAddress(const HttpRequestPtr &req,
@@ -41,30 +40,29 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
-        auto json = req->getJsonObject();
-        models::OrderAddress orderAddress = *json;
+        models::OrderAddress orderAddress = models::OrderAddress::VtoModel(*req->getJsonObject());
         
         services::OrderAddressService orderAddressService;
         if (orderAddressService.updateOrderAddress(orderAddress)) {
             auto resp = vo::R<models::OrderAddress>::success(orderAddress);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
     void getOrderAddress(const HttpRequestPtr &req,
-                         std::function<void(const HttpResponsePtr &)> &&callback,
-                         long orderId) {
+                         std::function<void(const HttpResponsePtr &)> &&callback) {
+        long orderId = std::stol(req->getParameter("orderId"));
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
@@ -73,10 +71,10 @@ public:
         
         if (orderAddress.has_value()) {
             auto resp = vo::R<models::OrderAddress>::success(*orderAddress);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::PARAM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
 };

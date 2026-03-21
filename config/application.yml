@@ -4,7 +4,7 @@ database:
   port: 3306
   name: campus_trade
   user: root
-  password: your_password
+  password: 123456
 
 # 服务器配置
 server:
@@ -13,4 +13,4 @@ server:
 
 # 文件配置
 file:
-  userFilePath: ./uploads
+  userFilePath: /mnt/hgfs/linux/uploads/

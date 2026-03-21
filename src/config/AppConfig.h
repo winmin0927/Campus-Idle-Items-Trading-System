@@ -24,13 +24,13 @@ private:
     
     void loadConfig() {
         try {
-            YAML::Node config = YAML::LoadFile("config/application.yml");
+            YAML::Node config = YAML::LoadFile("../../config/application.yml");
             
             dbHost = config["database"]["host"].as<std::string>("localhost");
             dbPort = config["database"]["port"].as<int>(3306);
             dbName = config["database"]["name"].as<std::string>("campus_trade");
             dbUser = config["database"]["user"].as<std::string>("root");
-            dbPassword = config["database"]["password"].as<std::string>("");
+            dbPassword = config["database"]["password"].as<std::string>("123456");
             serverPort = config["server"]["port"].as<int>(8080);
             userFilePath = config["file"]["userFilePath"].as<std::string>("./uploads");
             baseUrl = config["server"]["baseUrl"].as<std::string>("http://localhost:8080");
@@ -40,7 +40,7 @@ private:
             dbPort = 3306;
             dbName = "campus_trade";
             dbUser = "root";
-            dbPassword = "";
+            dbPassword = "123456";
             serverPort = 8080;
             userFilePath = "./uploads";
             baseUrl = "http://localhost:8080";

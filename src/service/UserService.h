@@ -30,6 +30,10 @@ public:
     bool updatePassword(const std::string& newPassword, const std::string& oldPassword, long id) {
         return userDao.updatePassword(newPassword, oldPassword, id);
     }
+
+    bool updateAvatar(const std::string& newAvatar, long id) {
+        return userDao.updateAvatar(newAvatar, id);
+    }
     
     vo::PageVo<models::User> getUserByStatus(int status, int page, int nums) {
         std::vector<models::User> list;

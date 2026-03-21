@@ -2,7 +2,7 @@
 
 #include <drogon/drogon.h>
 #include <chrono>
-#include "services/MessageService.h"
+#include "service/MessageService.h"
 #include "vo/R.h"
 #include "enums/ErrorMsg.h"
 
@@ -24,12 +24,11 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
-        auto json = req->getJsonObject();
-        models::Message message = *json;
+        models::Message message = models::Message::VtoModel(*req->getJsonObject());
         message.userId = std::stol(shUserId);
         // 设置当前时间
         auto now = std::chrono::system_clock::now();
@@ -41,36 +40,36 @@ public:
         services::MessageService messageService;
         if (messageService.addMessage(message)) {
             auto resp = vo::R<models::Message>::success(message);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
     void getMessage(const HttpRequestPtr &req,
-                    std::function<void(const HttpResponsePtr &)> &&callback,
-                    long id) {
+                    std::function<void(const HttpResponsePtr &)> &&callback) {
+        long id = std::stol(req->getParameter("id"));
         services::MessageService messageService;
         auto message = messageService.getMessage(id);
         
         if (message.has_value()) {
             auto resp = vo::R<models::Message>::success(*message);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::PARAM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
     void getAllIdleMessage(const HttpRequestPtr &req,
-                          std::function<void(const HttpResponsePtr &)> &&callback,
-                          long idleId) {
+                          std::function<void(const HttpResponsePtr &)> &&callback) {
+        long idleId = std::stol(req->getParameter("idleId"));
         services::MessageService messageService;
         auto messages = messageService.getAllIdleMessage(idleId);
         
         auto resp = vo::R<std::vector<vo::MessageVo>>::success(messages);
-        callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+        callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
     }
     
     void getAllMyMessage(const HttpRequestPtr &req,
@@ -78,7 +77,7 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
@@ -87,26 +86,26 @@ public:
         auto messages = messageService.getAllMyMessage(userId);
         
         auto resp = vo::R<std::vector<vo::MessageVo>>::success(messages);
-        callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+        callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
     }
     
     void deleteMessage(const HttpRequestPtr &req,
-                      std::function<void(const HttpResponsePtr &)> &&callback,
-                      long id) {
+                      std::function<void(const HttpResponsePtr &)> &&callback) {
+        long id = std::stol(req->getParameter("id"));
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
         services::MessageService messageService;
         if (messageService.deleteMessage(id)) {
             auto resp = vo::R<>::success();
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
 };

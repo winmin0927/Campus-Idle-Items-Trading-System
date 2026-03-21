@@ -20,8 +20,8 @@ public:
     
     long insert(const models::OrderAddress& record) {
         auto result = dbClient->execSqlSync(
-            "INSERT INTO order_address (order_id, consignee_name, consignee_phone, "
-            "province_name, city_name, region_name, detail_address) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO order_address (orderId, consigneeName, consigneePhone, "
+            "provinceName, cityName, regionName, detailAddress) VALUES (?, ?, ?, ?, ?, ?, ?)",
             record.orderId, record.consigneeName, record.consigneePhone,
             record.provinceName, record.cityName, record.regionName, record.detailAddress
         );
@@ -35,15 +35,15 @@ public:
     }
     
     std::optional<models::OrderAddress> selectByOrderId(long orderId) {
-        auto result = dbClient->execSqlSync("SELECT * FROM order_address WHERE order_id = ?", orderId);
+        auto result = dbClient->execSqlSync("SELECT * FROM order_address WHERE orderId = ?", orderId);
         if (result.empty()) return std::nullopt;
         return mapRowToOrderAddress(result[0]);
     }
     
     bool updateByPrimaryKey(const models::OrderAddress& record) {
         auto result = dbClient->execSqlSync(
-            "UPDATE order_address SET order_id = ?, consignee_name = ?, consignee_phone = ?, "
-            "province_name = ?, city_name = ?, region_name = ?, detail_address = ? WHERE id = ?",
+            "UPDATE order_address SET orderId = ?, consigneeName = ?, consigneePhone = ?, "
+            "provinceName = ?, cityName = ?, regionName = ?, detailAddress = ? WHERE id = ?",
             record.orderId, record.consigneeName, record.consigneePhone,
             record.provinceName, record.cityName, record.regionName, record.detailAddress, record.id
         );
@@ -56,13 +56,13 @@ private:
     models::OrderAddress mapRowToOrderAddress(const Row& row) {
         models::OrderAddress addr;
         addr.id = row["id"].as<long>();
-        addr.orderId = row["order_id"].as<long>();
-        addr.consigneeName = row["consignee_name"].as<std::string>();
-        addr.consigneePhone = row["consignee_phone"].as<std::string>();
-        addr.provinceName = row["province_name"].as<std::string>();
-        addr.cityName = row["city_name"].as<std::string>();
-        addr.regionName = row["region_name"].as<std::string>();
-        addr.detailAddress = row["detail_address"].as<std::string>();
+        addr.orderId = row["orderId"].as<long>();
+        addr.consigneeName = row["consigneeName"].as<std::string>();
+        addr.consigneePhone = row["consigneePhone"].as<std::string>();
+        addr.provinceName = row["provinceName"].as<std::string>();
+        addr.cityName = row["cityName"].as<std::string>();
+        addr.regionName = row["regionName"].as<std::string>();
+        addr.detailAddress = row["detailAddress"].as<std::string>();
         return addr;
     }
 };

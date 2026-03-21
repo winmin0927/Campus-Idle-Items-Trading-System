@@ -1,7 +1,7 @@
 #pragma once
 
 #include <drogon/drogon.h>
-#include "services/AddressService.h"
+#include "service/AddressService.h"
 #include "vo/R.h"
 #include "enums/ErrorMsg.h"
 
@@ -23,7 +23,7 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
         
@@ -35,16 +35,16 @@ public:
             // 获取用户所有地址
             auto addresses = addressService.getAddressByUser(userId);
             auto resp = vo::R<std::vector<models::Address>>::success(addresses);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             // 获取单个地址
             auto address = addressService.getAddressById(idParam.value(), userId);
             if (address.has_value()) {
                 auto resp = vo::R<models::Address>::success(*address);
-                callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+                callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             } else {
                 auto resp = vo::R<>::fail(enums::ErrorMsg::PARAM_ERROR);
-                callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+                callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             }
         }
     }
@@ -54,67 +54,86 @@ public:
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
-        
-        auto json = req->getJsonObject();
-        models::Address address = *json;
-        address.userId = std::stol(shUserId);
-        
+
+        auto jsonPtr = req->getJsonObject();
+        if (!jsonPtr) {
+            auto resp = vo::R<>::fail(enums::ErrorMsg::PARAM_ERROR);
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
+            return;
+        }
+
+        models::Address address = models::Address::VtoModel(*jsonPtr);
+        address.userId = std::stol(shUserId);   // 从 Cookie 获取
+
         services::AddressService addressService;
         if (addressService.addAddress(address)) {
             auto resp = vo::R<models::Address>::success(address);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
     void updateAddress(const HttpRequestPtr &req,
-                       std::function<void(const HttpResponsePtr &)> &&callback) {
+                    std::function<void(const HttpResponsePtr &)> &&callback) {
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
-        
-        auto json = req->getJsonObject();
-        models::Address address = *json;
+
+        auto jsonPtr = req->getJsonObject();
+        if (!jsonPtr) {
+            auto resp = vo::R<>::fail(enums::ErrorMsg::PARAM_ERROR);
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
+            return;
+        }
+
+        models::Address address = models::Address::VtoModel(*jsonPtr);
         address.userId = std::stol(shUserId);
-        
+
         services::AddressService addressService;
         if (addressService.updateAddress(address)) {
             auto resp = vo::R<>::success();
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
     
     void deleteAddress(const HttpRequestPtr &req,
-                       std::function<void(const HttpResponsePtr &)> &&callback) {
+                    std::function<void(const HttpResponsePtr &)> &&callback) {
         auto shUserId = req->getCookie("shUserId");
         if (shUserId.empty()) {
             auto resp = vo::R<>::fail(enums::ErrorMsg::COOKIE_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
             return;
         }
-        
-        auto json = req->getJsonObject();
-        long id = (*json)["id"].as<long>();
+
+        auto jsonPtr = req->getJsonObject();
+        if (!jsonPtr) {
+            auto resp = vo::R<>::fail(enums::ErrorMsg::PARAM_ERROR);
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
+            return;
+        }
+
+        const Json::Value &json = *jsonPtr;
+        long id = json.get("id", 0).asInt64();   // 必须提供 id
         long userId = std::stol(shUserId);
-        
+
         services::AddressService addressService;
         if (addressService.deleteAddress(id, userId)) {
             auto resp = vo::R<>::success();
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         } else {
             auto resp = vo::R<>::fail(enums::ErrorMsg::SYSTEM_ERROR);
-            callback(HttpResponse::newHttpJsonResponse(resp.toJson()));
+            callback(HttpResponse::newHttpJsonResponse(resp.toValue()));
         }
     }
 };
